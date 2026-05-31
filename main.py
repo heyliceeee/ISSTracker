@@ -1,6 +1,19 @@
 import os
+import time
+from email.message import EmailMessage
+from dotenv import load_dotenv
 import requests
 from datetime import datetime
+import smtplib
+
+load_dotenv()
+
+smtp_host = os.getenv("SMTP_HOST")
+smtp_port = int(os.getenv("SMTP_PORT"))
+smtp_pass = os.getenv("SMTP_PASSWORD")
+smtp_email = os.getenv("SMTP_EMAIL")
+smtp_email_to = os.getenv("SMTP_EMAIL_TO")
+
 MY_LAT = 41.157944 # Your latitude
 MY_LONG = -8.629105 # Your longitude
 dir_path = os.path.dirname(os.path.realpath(__file__)) # get the path of the current file
@@ -45,7 +58,25 @@ def is_night():
         return True
     else:
         return False
+def send_email():
+    """
+    send the email
+    """
+    msg = EmailMessage()
+    msg["Subject"] = "Look Up👆🏻"
+    msg["From"] = smtp_email
+    msg["To"] = smtp_email_to
+    msg.set_content("The ISS is above you in the sky.", charset="utf-8")
 
-if is_iss_overhead() and is_night(): # Determines if it is night and iss is overhead
-    # send email
-    print("It is night and iss is overhead")
+    with smtplib.SMTP(smtp_host, smtp_port) as conn:  # Create an SMTP connection
+        conn.starttls()  # Enable TLS encryption
+        conn.login(user=smtp_email, password=smtp_pass)  # Log in to the SMTP server
+        conn.send_message(msg) # Send the email
+
+while True: # loop forever
+    time.sleep(60) # sleep for 60 seconds
+    if is_iss_overhead() and is_night(): # Determines if it is night and iss is overhead
+        print("ISS is overhead and it is night")
+        send_email() # send email
+    else:
+        print("ISS is not overhead or it is daytime")
